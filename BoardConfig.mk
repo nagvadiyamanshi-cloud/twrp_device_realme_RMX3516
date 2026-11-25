@@ -1,0 +1,255 @@
+# Copyright (C) 2024 The TWRP Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+DEVICE_PATH := device/realme/RMX3516
+
+
+# Architecture
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_ABI := arm64-v8a
+TARGET_CPU_ABI2 := 
+TARGET_CPU_VARIANT := generic
+TARGET_CPU_VARIANT_RUNTIME := cortex-a76
+
+TARGET_2ND_ARCH := arm
+TARGET_2ND_ARCH_VARIANT := armv7-a-neon
+TARGET_2ND_CPU_ABI := armeabi-v7a
+TARGET_2ND_CPU_ABI2 := armeabi
+TARGET_2ND_CPU_VARIANT := generic
+TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a76
+
+# 64-Bit
+TARGET_IS_64_BIT := true
+TARGET_USES_64_BIT_BINDER := true
+TARGET_SUPPORTS_32_BIT_APPS := true
+TARGET_SUPPORTS_64_BIT_APPS := true
+
+# CPU scheduler configuration
+TARGET_CPU_SMP := true
+ENABLE_CPUSETS := true
+ENABLE_SCHEDBOOST := true
+
+# Build hacks
+ALLOW_MISSING_DEPENDENCIES := true
+BUILD_BROKEN_DUP_RULES := true
+
+# Vendor_boot recovery ramdisk
+BOARD_USES_VENDOR_BOOT := true
+BOARD_BOOT_HEADER_VERSION := 4
+TW_LOAD_VENDOR_BOOT_MODULES := true
+BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
+BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
+BOARD_RAMDISK_USE_LZ4 := true
+
+# Assert
+TARGET_OTA_ASSERT_DEVICE := RMX3516,RE54D8L1,ums9230_nico
+
+# APEX
+OVERRIDE_TARGET_FLATTEN_APEX := true
+
+# Bootloader
+TARGET_BOOTLOADER_BOARD_NAME := ums9230_nico
+TARGET_NO_BOOTLOADER := true
+TARGET_USES_UEFI := true
+
+# Platform
+BOARD_USES_SPRD_HARDWARE := true
+TARGET_BOARD_PLATFORM := ums9230
+
+# Display
+TARGET_SCREEN_DENSITY := 480
+TARGET_SCREEN_WIDTH := 1080
+TARGET_SCREEN_HEIGHT := 2408
+
+# Kernel
+BOARD_BOOTIMG_HEADER_VERSION := 4
+BOARD_KERNEL_BASE := 0x00000000
+BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8
+BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive
+BOARD_KERNEL_PAGESIZE := 4096
+BOARD_KERNEL_OFFSET := 0x00008000
+BOARD_RAMDISK_OFFSET := 0x05400000
+BOARD_KERNEL_TAGS_OFFSET := 0x00000100
+BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOTIMG_HEADER_VERSION)
+BOARD_MKBOOTIMG_ARGS += --ramdisk_offset $(BOARD_RAMDISK_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
+BOARD_KERNEL_IMAGE_NAME := Image
+
+
+# Kernel - prebuilt
+TARGET_FORCE_PREBUILT_KERNEL := true
+TARGET_NO_KERNEL := false
+ifeq ($(TARGET_FORCE_PREBUILT_KERNEL),true)
+TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/Image
+TARGET_PREBUILT_DTB := $(DEVICE_PATH)/prebuilt/dtb.img
+#BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/dtbo.img
+#BOARD_INCLUDE_RECOVERY_DTBO := true
+BOARD_KERNEL_SEPARATED_DTBO := true
+BOARD_MKBOOTIMG_ARGS += --dtb $(TARGET_PREBUILT_DTB)
+endif
+
+# AVB
+BOARD_AVB_ENABLE := true
+BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --flags 3
+BOARD_AVB_VBMETA_SYSTEM := system
+BOARD_AVB_BOOT_KEY_PATH := $(DEVICE_PATH)/security/rsa4096_boot.pem
+BOARD_AVB_BOOT_ALGORITHM := SHA256_RSA4096
+BOARD_AVB_BOOT_ROLLBACK_INDEX := 0
+BOARD_AVB_BOOT_ROLLBACK_INDEX_LOCATION := 2
+
+BOARD_AVB_VENDOR_BOOT_KEY_PATH := $(DEVICE_PATH)/security/rsa4096_boot.pem
+BOARD_AVB_VENDOR_BOOT_ALGORITHM := SHA256_RSA4096
+BOARD_AVB_VENDOR_BOOT_ROLLBACK_INDEX := $(PLATFORM_SECURITY_PATCH_TIMESTAMP)
+BOARD_AVB_VENDOR_BOOT_ROLLBACK_INDEX_LOCATION := 1
+
+
+# A/B
+AB_OTA_UPDATER := true
+AB_OTA_PARTITIONS += \
+    boot \
+    dtbo \
+    init_boot \
+    vendor_boot \
+    vbmeta \
+    vbmeta_product \
+    vbmeta_system \
+    vbmeta_system_ext \
+    vbmeta_vendor \
+
+# Partitions
+BOARD_FLASH_BLOCK_SIZE := 262144  # (BOARD_KERNEL_PAGESIZE * 64)
+BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
+BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 104857600
+BOARD_HAS_LARGE_FILESYSTEM := true
+BOARD_SUPPRESS_SECURE_ERASE := true
+#BOARD_ROOT_EXTRA_FOLDERS := cache socko my_preload
+BOARD_USES_METADATA_PARTITION := true
+TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
+TARGET_USERIMAGES_USE_EROFS := true
+
+# Filesystem types
+BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := erofs
+BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := erofs
+BOARD_PRODUCTIMAGE_FILE_SYSTEM_TYPE := erofs
+BOARD_SYSTEM_EXTIMAGE_FILE_SYSTEM_TYPE := erofs
+BOARD_VENDOR_DLKMIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
+
+# Workaround for error copying vendor files to recovery ramdisk
+TARGET_COPY_OUT_VENDOR := vendor
+TARGET_COPY_OUT_PRODUCT := product
+TARGET_COPY_OUT_SYSTEM_EXT := system_ext
+
+# Dynamic partitions / super
+BOARD_SUPER_PARTITION_SIZE := 5872025600
+BOARD_SUPER_PARTITION_GROUPS := group_unisoc_a
+BOARD_GROUP_UNISOC_A_SIZE := 5867831296
+BOARD_GROUP_UNISOC_A_PARTITION_LIST := system system_ext vendor product odm vendor_dlkm
+
+# Symlink
+BOARD_ROOT_EXTRA_SYMLINKS := \
+    /system/product:/product \
+    /system/system_ext:/system_ext
+
+# OS firmware patch
+TARGET_KEYMINT_AIDL          := true
+PLATFORM_SECURITY_PATCH := 2023-08-05
+VENDOR_SECURITY_PATCH := 2023-08-05
+PLATFORM_VERSION := 13
+
+# Crypto
+TW_INCLUDE_CRYPTO          := true
+TW_INCLUDE_CRYPTO_FBE      := true
+TW_USE_FSCRYPT_POLICY      := 2
+TW_INCLUDE_FBE_METADATA_DECRYPT := true
+BOARD_USES_METADATA_PARTITION := true
+
+# Keymint AIDL
+#TW_INCLUDE_CRYPTO := false
+#TW_INCLUDE_CRYPTO_FBE := false
+
+TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
+
+# Recovery
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery/root/system/etc/recovery.fstab
+TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
+TARGET_NO_RECOVERY := true
+#BOARD_USES_RECOVERY_AS_BOOT := true
+TARGET_USES_MKE2FS := true
+TARGET_COPY_OUT_VENDOR := vendor
+TARGET_COPY_OUT_PRODUCT := product
+TARGET_COPY_OUT_SYSTEM_EXT := system_ext
+TARGET_COPY_OUT_VENDOR_DLKM := vendor_dlkm
+
+# Modules 
+TARGET_RECOVERY_DEVICE_MODULES += \
+    libcap \
+    libion \
+    libxml2 
+
+# Additional Libraries
+TARGET_RECOVERY_DEVICE_MODULES += \
+    libandroidicu 
+
+# Sysfs path
+BOARD_COMMON_BACKLIGHT_PATH := /sys/class/backlight/sprd_backlight/brightness
+BOARD_COMMON_FLASHLIGHT_PATH := /sys/devices/virtual/misc/sprd_flash/test
+
+# Resetprop & repacktools
+TW_INCLUDE_RESETPROP := true
+TW_INCLUDE_REPACKTOOLS := true
+TW_INCLUDE_LIBRESETPROP := true
+
+# Debugging
+TWRP_INCLUDE_LOGCAT := true
+TARGET_USES_LOGD := true
+
+# TWRP Configuration
+TW_THEME := portrait_hdpi
+TW_EXTRA_LANGUAGES := true
+TW_DEFAULT_LANGUAGE := en
+#TW_NO_HAPTICS := false
+#TW_NO_FLASH_CURRENT_TWRP := true
+TW_BRIGHTNESS_PATH := $(BOARD_COMMON_BACKLIGHT_PATH)
+TW_DEFAULT_BRIGHTNESS := 150
+TW_MAX_BRIGHTNESS := 4000
+TW_INTERNAL_STORAGE_PATH := /data/media/0
+TW_INCLUDE_FASTBOOTD := true
+TW_USE_TOOLBOX := true
+RECOVERY_SDCARD_ON_DATA := true
+TW_USE_EXTERNAL_STORAGE := true
+TW_EXCLUDE_DEFAULT_USB_INIT := true
+TW_EXCLUDE_TWRPAPP := true
+TW_NO_BIND_SYSTEM := true
+TW_SCREEN_BLANK_ON_BOOT := true
+TW_NO_LEGACY_PROPS := true
+
+# Fix fastboot reboot
+TW_NO_FASTBOOT_BOOT := true
+
+# Maintainer
+BOARD_MAINTAINER_NAME := Hark
+TW_DEVICE_VERSION := RMX3516
+
+
+
+# AIDL
+TW_NO_HAPTICS := true
+
+# CPU Temp
+TW_CUSTOM_CPU_TEMP_PATH := /sys/class/power_supply/battery/temp
+#TW_CUSTOM_CPU_TEMP_PATH := /sys/devices/platform/soc/soc:aon/64200000.spi/spi_master/spi4/spi4.0/64200000.spi:pmic@0:fgu@c00/temp

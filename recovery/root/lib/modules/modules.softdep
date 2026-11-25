@@ -1,0 +1,8 @@
+# Soft dependencies extracted from modules themselves.
+softdep sprd_nt36xxx pre: hardware_info
+softdep nq_nci pre: hardware_info
+softdep sprd_cts pre: hardware_info
+softdep sprd_focaltech pre: hardware_info
+softdep sprd_drm pre: hardware_info
+softdep himax_mmi pre: hardware_info
+softdep sprd_sensor pre: hardware_info
