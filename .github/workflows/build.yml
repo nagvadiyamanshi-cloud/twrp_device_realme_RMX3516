@@ -1,0 +1,84 @@
+name: Build TWRP RMX3516
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf \
+            lib32ncurses5-dev lib32z1-dev libncurses5 libncurses5-dev libssl-dev libxml2-utils \
+            lz4 lzop python3 python-is-python3 rsync schedtool squashfs-tools unzip xsltproc zip zlib1g-dev openjdk-11-jdk
+          mkdir -p ~/bin
+          curl -s https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          sudo ln -sf ~/bin/repo /usr/bin/repo
+
+      - name: Swap
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 12
+
+      - name: Sync TWRP 12.1
+        run: |
+          mkdir -p ~/twrp && cd ~/twrp
+          git config --global user.name "builder"
+          git config --global user.email "builder@users.noreply.github.com"
+          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+      - name: Checkout device tree
+        uses: actions/checkout@v4
+        with:
+          path: tree
+
+      - name: Place device tree
+        run: |
+          mkdir -p ~/twrp/device/realme
+          cp -r $GITHUB_WORKSPACE/tree ~/twrp/device/realme/RMX3516
+          rm -rf ~/twrp/device/realme/RMX3516/.git ~/twrp/device/realme/RMX3516/.github
+
+      - name: Build vendor_boot
+        run: |
+          cd ~/twrp
+          export ALLOW_MISSING_DEPENDENCIES=true
+          source build/envsetup.sh
+          lunch twrp_RMX3516-eng
+          mka vendorbootimage -j$(nproc --all) 2>&1 | tee build.log
+          ls -la out/target/product/RMX3516/
+
+      - name: Collect output
+        if: always()
+        run: |
+          mkdir -p out_files
+          cp ~/twrp/out/target/product/RMX3516/vendor_boot.img out_files/TWRP-RMX3516-vendor_boot.img || true
+          cp ~/twrp/build.log out_files/ || true
+          tail -n 200 ~/twrp/build.log || true
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWRP-RMX3516
+          path: out_files/
+
+      - name: Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out_files/TWRP-RMX3516-vendor_boot.img
+          tag_name: build-${{ github.run_id }}
+          name: TWRP 3.7 RMX3516 (unofficial) ${{ github.run_id }}
